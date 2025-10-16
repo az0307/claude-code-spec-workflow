@@ -70,6 +70,8 @@
   "dependencies": {
     "@fastify/static": "^7.0.4",
     "@fastify/websocket": "^8.2.1",
+    "@fastify/compress": "^8.4.0",
+    "@fastify/etag": "^5.2.0",
     "@ngrok/ngrok": "^1.4.1",
     "chalk": "^4.1.2",
     "chokidar": "^3.5.3",
