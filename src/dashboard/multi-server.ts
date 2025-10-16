@@ -1,6 +1,8 @@
 import fastify, { FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import fastifyWebsocket from '@fastify/websocket';
+import fastifyCompress from '@fastify/compress';
+import fastifyEtag from '@fastify/etag';
 import { join, resolve, normalize } from 'path';
 import { readFile } from 'fs/promises';
 import { SpecWatcher } from './watcher';
@@ -83,6 +85,13 @@ export class MultiProjectDashboardServer {
   }
 
   async start() {
+    // Global performance plugins
+    await this.app.register(fastifyCompress, {
+      global: true,
+      encodings: ['br', 'gzip', 'deflate'],
+      syncCompression: false,
+    });
+    await this.app.register(fastifyEtag);
     // Discover projects
     console.log('Starting project discovery...');
     const discoveredProjects = await this.discovery.discoverProjects();
@@ -115,7 +124,22 @@ export class MultiProjectDashboardServer {
       root: __dirname, // Serve from the current directory (either src/dashboard or dist/dashboard)
       prefix: '/',
       decorateReply: true, // Enable sendFile method on reply
-      wildcard: false // Disable wildcard to prevent catching all routes
+      wildcard: false, // Disable wildcard to prevent catching all routes
+      etag: true,
+      lastModified: true,
+      cacheControl: true,
+      setHeaders: (res, pathName) => {
+        // Cache static assets aggressively; HTML and entry bundle should revalidate
+        const isHtml = /\.(?:html)$/i.test(pathName) || pathName.endsWith('/');
+        const isAppJs = /(?:^|\/)app\.js$/i.test(pathName);
+        const isAsset = /\.(?:js|css|svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf)$/i.test(pathName);
+        if (isHtml || isAppJs) {
+          res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+        } else if (isAsset) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+        res.setHeader('Vary', 'Accept-Encoding');
+      },
     });
 
 

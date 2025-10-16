@@ -27,13 +27,12 @@ const developmentConfig = {
 
 const productionConfig = {
   ...baseConfig,
-  sourcemap: true,
+  sourcemap: false,
   minify: true,
   treeShaking: true,
   // Advanced production optimizations
   legalComments: 'none',
-  drop: ['debugger'], // Keep console for debugging
-  // pure: ['console.log', 'console.warn', 'console.info'], // Commented out to keep console statements
+  drop: ['console', 'debugger'],
   // Mangling options for better compression
   mangleProps: /^_/,
   keepNames: false,
